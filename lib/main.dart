@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/todo_controller.dart';
 import 'package:t_g1455/todo_item.dart';
+import 'package:t_g1455/widgets/progress_lens.dart';
 import 'package:t_g1455/widgets/quick_add_morph.dart';
 import 'package:t_g1455/widgets/tips_carousel.dart';
 import 'package:t_g1455/widgets/todo_backdrop.dart';
@@ -319,6 +320,12 @@ class _TodoList extends StatelessWidget {
                         color: DefaultTextStyle.of(context).style.color
                             ?.withValues(alpha: 0.7),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    ProgressLens(
+                      progress: controller.items.isEmpty
+                          ? 0
+                          : controller.completedCount / controller.items.length,
                     ),
                   ],
                 ),

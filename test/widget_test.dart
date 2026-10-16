@@ -347,6 +347,26 @@ void main() {
     );
   });
 
+  testWidgets('progress lens sits at the completed fraction', (
+    WidgetTester tester,
+  ) async {
+    final TodoController controller = TodoController()
+      ..addTask(title: 'First')
+      ..addTask(title: 'Second');
+    controller.setCompleted(controller.items.first.id, true);
+    await pumpApp(tester, controller: controller);
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final Rect track = tester.getRect(
+      find.byKey(const ValueKey<String>('progress-track')),
+    );
+    final Offset lens = tester.getCenter(
+      find.byKey(const ValueKey<String>('progress-lens')),
+    );
+
+    expect(lens.dx, closeTo(track.left + 22 + (track.width - 44) * 0.5, 1.0));
+  });
+
   test('todo backdrop painter is constant and opaque', () {
     expect(kTodoBackdrop.isOpaque, isTrue);
     expect(kTodoBackdrop.shouldRepaint(const TodoBackdropPainter()), isFalse);
