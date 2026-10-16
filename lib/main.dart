@@ -3,6 +3,7 @@ import 'package:g1455/g1455.dart';
 import 'package:t_g1455/todo_controller.dart';
 import 'package:t_g1455/todo_item.dart';
 import 'package:t_g1455/widgets/quick_add_morph.dart';
+import 'package:t_g1455/widgets/tips_carousel.dart';
 import 'package:t_g1455/widgets/todo_row.dart';
 
 Future<void> main() async {
@@ -374,12 +375,8 @@ class _EmptyTodos extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
       ),
-      SizedBox(height: 8),
-      Text(
-        'Tap + to add your first task.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Color(0xB3FFFFFF)),
-      ),
+      SizedBox(height: 24),
+      TipsCarousel(),
     ],
   );
 }

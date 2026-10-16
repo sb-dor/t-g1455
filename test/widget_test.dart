@@ -16,6 +16,23 @@ void main() {
     expect(find.byIcon(Icons.add), findsOneWidget);
   });
 
+  testWidgets('tips carousel turns with the page control', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+
+    expect(find.text('Tap + to add a task'), findsOneWidget);
+
+    await tester.tapAt(
+      tester.getRect(find.byType(GlassPageControl)).centerRight -
+          const Offset(8, 0),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Pull the editor up for long notes'), findsOneWidget);
+  });
+
   testWidgets('adds a task from the glass editor sheet', (
     WidgetTester tester,
   ) async {
