@@ -313,6 +313,7 @@ class _TodoRow extends StatelessWidget {
       title: draft.title,
       notes: draft.notes,
       priority: draft.priority,
+      estimate: item.estimate,
     );
   }
 

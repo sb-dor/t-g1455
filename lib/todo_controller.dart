@@ -20,6 +20,21 @@ class TodoController extends ChangeNotifier {
   bool get showCompleted => _showCompleted;
   int get completedCount =>
       _items.where((TodoItem item) => item.isCompleted).length;
+  int get openCount => _items.length - completedCount;
+
+  TodoItem? get nextUp {
+    final List<TodoItem> open = _items
+        .where((TodoItem item) => !item.isCompleted)
+        .toList();
+    if (open.isEmpty) return null;
+    open.sort(_compare);
+    return open.first;
+  }
+
+  int _compare(TodoItem a, TodoItem b) => switch (_sort) {
+    TodoSort.newest => b.id.compareTo(a.id),
+    TodoSort.title => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+  };
 
   List<TodoItem> get visibleItems {
     final List<TodoItem> visible = _items.where((TodoItem item) {
@@ -34,15 +49,7 @@ class TodoController extends ChangeNotifier {
           item.title.toLowerCase().contains(query) ||
           item.notes.toLowerCase().contains(query);
     }).toList();
-    switch (_sort) {
-      case TodoSort.newest:
-        visible.sort((TodoItem a, TodoItem b) => b.id.compareTo(a.id));
-      case TodoSort.title:
-        visible.sort(
-          (TodoItem a, TodoItem b) =>
-              a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-        );
-    }
+    visible.sort(_compare);
     return List<TodoItem>.unmodifiable(visible);
   }
 
@@ -50,6 +57,7 @@ class TodoController extends ChangeNotifier {
     required String title,
     String notes = '',
     TodoPriority priority = TodoPriority.medium,
+    int estimate = 1,
   }) {
     final String cleanTitle = title.trim();
     if (cleanTitle.isEmpty) return;
@@ -59,6 +67,7 @@ class TodoController extends ChangeNotifier {
         title: cleanTitle,
         notes: notes.trim(),
         priority: priority,
+        estimate: estimate.clamp(kMinEstimate, kMaxEstimate),
         createdAt: DateTime.now(),
       ),
     );
@@ -107,6 +116,7 @@ class TodoController extends ChangeNotifier {
     required String title,
     required String notes,
     required TodoPriority priority,
+    required int estimate,
   }) {
     final String cleanTitle = title.trim();
     if (cleanTitle.isEmpty) return;
@@ -116,8 +126,19 @@ class TodoController extends ChangeNotifier {
       title: cleanTitle,
       notes: notes.trim(),
       priority: priority,
+      estimate: estimate.clamp(kMinEstimate, kMaxEstimate),
     );
     notifyListeners();
+  }
+
+  void completeAll() {
+    bool changed = false;
+    for (int i = 0; i < _items.length; i++) {
+      if (_items[i].isCompleted) continue;
+      _items[i] = _items[i].copyWith(isCompleted: true);
+      changed = true;
+    }
+    if (changed) notifyListeners();
   }
 
   void clearCompleted() {
