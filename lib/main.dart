@@ -56,59 +56,145 @@ class TodoPage extends StatelessWidget {
 
   final TodoController controller;
 
-  List<GlassTabItem> get _tabs => <GlassTabItem>[
-    const GlassTabItem(icon: Icons.list_alt, label: 'All'),
-    GlassTabItem(
-      label: 'Open',
-      iconBuilder: (BuildContext context, GlassTabItemLook look) => GlassBadge(
-        key: const ValueKey<String>('open-tab-badge'),
-        count: controller.openCount,
-        child: Icon(
-          Icons.radio_button_unchecked,
-          color: look.color,
-          size: look.iconSize,
-        ),
-      ),
-    ),
-    const GlassTabItem(icon: Icons.task_alt, label: 'Done'),
-  ];
-
   @override
   Widget build(BuildContext context) => Scaffold(
     body: _TodoBackdrop(
-      child: ListenableBuilder(
-        listenable: controller,
-        builder: (BuildContext context, Widget? child) => GlassScaffold(
-          host: false,
-          topBar: GlassBar(
-            padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
-            child: Row(
-              children: <Widget>[
-                const Icon(Icons.check_circle_outline),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'My Tasks',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
+      child: GlassScaffold(
+        host: false,
+        topBar: GlassBar(
+          padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.check_circle_outline),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'My Tasks',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
-                _FilterPopover(controller: controller),
-              ],
-            ),
+              ),
+              _FilterPopover(controller: controller),
+            ],
           ),
-          bottomBar: GlassTabBar(
-            items: _tabs,
-            selectedIndex: controller.view.index,
-            onSelected: (int index) =>
-                controller.selectView(TodoView.values[index]),
-          ),
-          floatingAction: QuickAddMorph(controller: controller),
-          body: controller.items.isEmpty
+        ),
+        bottomBar: _TabBarSection(controller: controller),
+        floatingAction: QuickAddMorph(controller: controller),
+        body: ListenableBuilder(
+          listenable: controller,
+          builder: (BuildContext context, Widget? child) =>
+              controller.items.isEmpty
               ? const _EmptyTodos()
               : _TodoList(controller: controller),
         ),
       ),
     ),
+  );
+}
+
+/// The bottom tab bar. It listens to the controller but rebuilds only when
+/// something it draws changes: the selected view, the open count on the badge,
+/// or the next-up task shown in the accessory.
+class _TabBarSection extends StatefulWidget {
+  const _TabBarSection({required this.controller});
+
+  final TodoController controller;
+
+  @override
+  State<_TabBarSection> createState() => _TabBarSectionState();
+}
+
+class _TabBarSectionState extends State<_TabBarSection> {
+  late (int, int, int?, String?) _key;
+
+  static (int, int, int?, String?) _keyOf(TodoController controller) {
+    final TodoItem? nextUp = controller.nextUp;
+    return (
+      controller.view.index,
+      controller.openCount,
+      nextUp?.id,
+      nextUp?.title,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _key = _keyOf(widget.controller);
+    widget.controller.addListener(_onChanged);
+  }
+
+  @override
+  void didUpdateWidget(_TabBarSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onChanged);
+      widget.controller.addListener(_onChanged);
+      _key = _keyOf(widget.controller);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onChanged);
+    super.dispose();
+  }
+
+  void _onChanged() {
+    final (int, int, int?, String?) key = _keyOf(widget.controller);
+    if (key == _key) return;
+    setState(() => _key = key);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final TodoController controller = widget.controller;
+    final int openCount = controller.openCount;
+    final String? nextUpTitle = controller.nextUp?.title;
+    return GlassTabBar(
+      items: <GlassTabItem>[
+        const GlassTabItem(icon: Icons.list_alt, label: 'All'),
+        GlassTabItem(
+          label: 'Open',
+          iconBuilder: (BuildContext context, GlassTabItemLook look) =>
+              GlassBadge(
+                key: const ValueKey<String>('open-tab-badge'),
+                count: openCount,
+                child: Icon(
+                  Icons.radio_button_unchecked,
+                  color: look.color,
+                  size: look.iconSize,
+                ),
+              ),
+        ),
+        const GlassTabItem(icon: Icons.task_alt, label: 'Done'),
+      ],
+      selectedIndex: controller.view.index,
+      onSelected: (int index) => controller.selectView(TodoView.values[index]),
+      minimizeBehavior: GlassTabBarMinimizeBehavior.onScrollDown,
+      bottomAccessory: nextUpTitle == null ? null : _NextUp(title: nextUpTitle),
+    );
+  }
+}
+
+class _NextUp extends StatelessWidget {
+  const _NextUp({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      const Icon(Icons.flag_outlined),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          'Next up: $title',
+          key: const ValueKey<String>('next-up-accessory'),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
   );
 }
 
