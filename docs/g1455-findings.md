@@ -135,7 +135,7 @@ the user).
 | `GlassButtonGroup` header toolbar | Disabled state | OK |
 | `GlassStepper` | Halves, disabled at limits | OK; held repeat: deferred, the simulator automation delivered each touch-up one interaction late, so multi-step gestures were unreliable |
 | Sheet detents (editor, Lab) | Medium ⇄ large drag, opaque large finish | OK |
-| `GlassGroup` priority blobs | Selected size change | OK (blobs too far apart to fuse: our layout, fixed in I4). I4 re-check pending: the controller will re-check on the simulator |
+| `GlassGroup` priority blobs | Selected size change, fusing | OK: after I4 (spacing 14) the blobs fuse into one silhouette on device (`docs/findings/check-glass-group-blobs-fuse.png`) |
 | `GlassConcentric` field radius | Corners concentric with the sheet | OK |
 | `GlassMorph` quick-add | "+" ⇄ panel morph | OK |
 | `GlassTextField` | Text legibility inside the morph | OK |
@@ -146,7 +146,7 @@ the user).
 | `GlassSurface` + `GlassTravel` lens | Lens slides, materializes in | OK after M1 |
 | `GlassSwitch` / `GlassSlider` | Toggle, sync | OK; F03 |
 | `GlassMenuAnchor`, `GlassPopoverAnchor`, `GlassAlert` | Grow-in, dim, dismiss | Deferred: the simulator automation delivered each touch-up one interaction late, so multi-step gestures were unreliable; widget tests cover them |
-| Lab: finishes | auto / clear / frosted | OK (dark/light not run) |
+| Lab: finishes | auto / clear / frosted | OK. Dark / Light: Deferred: these are the two named `.regular` branches, already seen on device through adaptive (F01) |
 | Lab: tiers | Opaque and cheap fills | OK (cheap shows sharp content through bars, as documented) |
 | Lab: ripple, press swell, drop stretch | Visible effect | Deferred: the simulator automation delivered each touch-up one interaction late, so multi-step gestures were unreliable; widget tests cover the behaviour where they do |
 | Lab: adaptive, high contrast | Branch, outline | Adaptive: F01, F02; high contrast OK |
