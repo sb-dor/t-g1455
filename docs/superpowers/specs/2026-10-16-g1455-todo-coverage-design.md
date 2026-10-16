@@ -70,7 +70,7 @@ New uses:
 | `GlassStepper` | New task field `estimate`: 1 to 10 pomodoros, step 1, in the editor. |
 | `GlassPageControl` | A 3-page tips carousel (`PageView`) on the empty state. Each page is a `GlassCard`; the page control floats over them. |
 | `GlassBackdrop.painter` | The page gradient becomes a declared backdrop with a `GradientProxyPainter`. |
-| `GlassBackdrop.live` | Wraps the scrolling body so the bars over the list still capture the list. |
+| `GlassBackdrop.live` | Wraps the whole `GlassScaffold` so the bars over the list still capture the list; the body re-declares the gradient for the glass inside the list. |
 | `GlassSurface` + `GlassTravel` + `materialize` | A progress lens in the stats card: a clear, text-free (`labelled: false`) capsule that slides along a track to `completed / total`, inside a `GlassTravel` with `RepaintBoundary`s per rule 8, and materializes in on first build. |
 | `GlassGroup` | The editor's three priority markers become small text-free glass blobs in a `GlassGroup` with `spacing` set so the selected blob fuses with its neighbour. Replaces the coloured dot row only; the slider stays. |
 | `GlassAbove` | Wraps the tips carousel's `GlassPageControl`, which is sibling glass over the `GlassCard` pages (rule 7). |
@@ -125,8 +125,14 @@ repaint; it has an effect only in debug builds.
 `TodoPage`:
 
 - The page background is `GlassBackdrop.painter` with the existing gradient;
-  the two glow circles stay painted inside it.
-- The `GlassScaffold` body is wrapped in `GlassBackdrop.live`.
+  the two glow circles stay painted under it as ordinary content.
+- The whole `GlassScaffold` is wrapped in `GlassBackdrop.live`, so its bars
+  capture the list that scrolls under them.
+- The scaffold body (laid out full screen, the same box as the page) is wrapped
+  in a second `GlassBackdrop.painter` with the same painter and
+  `paintBackdrop: false`. Glass inside the list (search bar, stats card,
+  toolbar row, lens, tips cards, glass rows) sits over the gradient only, so it
+  samples the declaration. This also exercises nested, innermost-first scoping.
 - The top bar gets a Lab button (plain `Icon` in a `GestureDetector`, rule 4)
   wrapped in a `GlassBadge` dot, next to the filter popover.
 - The tab bar rebuilds only when its selection, the open count or the next-up
