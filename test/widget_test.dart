@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/todo_controller.dart';
+import 'package:t_g1455/widgets/todo_backdrop.dart';
 
 import 'helpers.dart';
 
@@ -328,5 +329,26 @@ void main() {
     await pumpApp(tester, controller: controller);
 
     expect(find.text('Seeded'), findsOneWidget);
+  });
+
+  testWidgets('bars capture and list glass reads the declaration', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.pump();
+
+    expect(
+      GlassBackdrop.maybeOf(tester.element(find.text('My Tasks'))),
+      isNull,
+    );
+    expect(
+      GlassBackdrop.maybeOf(tester.element(find.text('No tasks yet'))),
+      isNotNull,
+    );
+  });
+
+  test('todo backdrop painter is constant and opaque', () {
+    expect(kTodoBackdrop.isOpaque, isTrue);
+    expect(kTodoBackdrop.shouldRepaint(const TodoBackdropPainter()), isFalse);
   });
 }

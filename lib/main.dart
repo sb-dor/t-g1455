@@ -4,6 +4,7 @@ import 'package:t_g1455/todo_controller.dart';
 import 'package:t_g1455/todo_item.dart';
 import 'package:t_g1455/widgets/quick_add_morph.dart';
 import 'package:t_g1455/widgets/tips_carousel.dart';
+import 'package:t_g1455/widgets/todo_backdrop.dart';
 import 'package:t_g1455/widgets/todo_row.dart';
 
 Future<void> main() async {
@@ -59,33 +60,40 @@ class TodoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: _TodoBackdrop(
-      child: GlassScaffold(
-        host: false,
-        topBar: GlassBar(
-          padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.check_circle_outline),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'My Tasks',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+    body: GlassBackdrop.painter(
+      kTodoBackdrop,
+      child: GlassBackdrop.live(
+        child: GlassScaffold(
+          host: false,
+          topBar: GlassBar(
+            padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.check_circle_outline),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'My Tasks',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
-              _FilterPopover(controller: controller),
-            ],
+                _FilterPopover(controller: controller),
+              ],
+            ),
           ),
-        ),
-        bottomBar: _TabBarSection(controller: controller),
-        floatingAction: QuickAddMorph(controller: controller),
-        body: ListenableBuilder(
-          listenable: controller,
-          builder: (BuildContext context, Widget? child) =>
-              controller.items.isEmpty
-              ? const _EmptyTodos()
-              : _TodoList(controller: controller),
+          bottomBar: _TabBarSection(controller: controller),
+          floatingAction: QuickAddMorph(controller: controller),
+          body: GlassBackdrop.painter(
+            kTodoBackdrop,
+            paintBackdrop: false,
+            child: ListenableBuilder(
+              listenable: controller,
+              builder: (BuildContext context, Widget? child) =>
+                  controller.items.isEmpty
+                  ? const _EmptyTodos()
+                  : _TodoList(controller: controller),
+            ),
+          ),
         ),
       ),
     ),
@@ -378,61 +386,5 @@ class _EmptyTodos extends StatelessWidget {
       SizedBox(height: 24),
       TipsCarousel(),
     ],
-  );
-}
-
-class _TodoBackdrop extends StatelessWidget {
-  const _TodoBackdrop({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: <Color>[
-          Color(0xFF11131C),
-          Color(0xFF252044),
-          Color(0xFF172F3D),
-        ],
-      ),
-    ),
-    child: Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const Positioned(
-          top: 110,
-          right: -70,
-          child: _Glow(color: Color(0x667C5CFC), size: 240),
-        ),
-        const Positioned(
-          bottom: 80,
-          left: -90,
-          child: _Glow(color: Color(0x5543D9AD), size: 270),
-        ),
-        child,
-      ],
-    ),
-  );
-}
-
-class _Glow extends StatelessWidget {
-  const _Glow({required this.color, required this.size});
-
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      gradient: RadialGradient(
-        colors: <Color>[color, color.withValues(alpha: 0)],
-      ),
-    ),
   );
 }
