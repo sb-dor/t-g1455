@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
+import 'package:t_g1455/lab/lab_settings.dart';
 import 'package:t_g1455/todo_controller.dart';
 import 'package:t_g1455/todo_item.dart';
 import 'package:t_g1455/widgets/progress_lens.dart';
@@ -15,9 +16,10 @@ Future<void> main() async {
 }
 
 class App extends StatefulWidget {
-  const App({this.controller, super.key});
+  const App({this.controller, this.lab, super.key});
 
   final TodoController? controller;
+  final LabSettings? lab;
 
   @override
   State<App> createState() => _AppState();
@@ -25,10 +27,12 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   late final TodoController _controller = widget.controller ?? TodoController();
+  late final LabSettings _lab = widget.lab ?? LabSettings();
 
   @override
   void dispose() {
     if (widget.controller == null) _controller.dispose();
+    if (widget.lab == null) _lab.dispose();
     super.dispose();
   }
 
@@ -43,12 +47,21 @@ class _AppState extends State<App> {
       ),
       scaffoldBackgroundColor: Colors.transparent,
     ),
-    builder: (BuildContext context, Widget? child) => GlassHost(
-      richBackdrop: true,
-      minLabelContrast: kTextContrastAA,
-      backdrop: const Color(0xFF11131C),
-      adaptive: const GlassAdaptive(),
-      child: child!,
+    builder: (BuildContext context, Widget? child) => ListenableBuilder(
+      listenable: _lab,
+      builder: (BuildContext context, Widget? _) => GlassHost(
+        finish: _lab.finish.glassFinish,
+        tier: _lab.tier,
+        ripple: _lab.glassRipple,
+        dropMotion: _lab.dropMotion,
+        press: _lab.glassPress,
+        adaptive: _lab.glassAdaptive,
+        highContrast: _lab.glassHighContrast,
+        richBackdrop: true,
+        minLabelContrast: kTextContrastAA,
+        backdrop: const Color(0xFF11131C),
+        child: child!,
+      ),
     ),
     home: TodoPage(controller: _controller),
   );

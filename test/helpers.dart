@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:t_g1455/lab/lab_settings.dart';
 import 'package:t_g1455/main.dart';
 import 'package:t_g1455/todo_controller.dart';
 
-Future<void> pumpApp(WidgetTester tester, {TodoController? controller}) async {
-  await tester.pumpWidget(App(controller: controller));
+Future<void> pumpApp(
+  WidgetTester tester, {
+  TodoController? controller,
+  LabSettings? lab,
+}) async {
+  await tester.pumpWidget(App(controller: controller, lab: lab));
   await tester.pump();
 }
 
