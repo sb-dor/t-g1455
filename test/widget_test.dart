@@ -347,6 +347,35 @@ void main() {
     );
   });
 
+  testWidgets('lens and rows capture live instead of reading the declaration', (
+    WidgetTester tester,
+  ) async {
+    final TodoController controller = TodoController()
+      ..addTask(title: 'First')
+      ..addTask(title: 'Second');
+    await pumpApp(tester, controller: controller);
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(
+      GlassBackdrop.maybeOf(
+        tester.element(find.byKey(const ValueKey<String>('progress-lens'))),
+      ),
+      isNull,
+    );
+    expect(
+      GlassBackdrop.maybeOf(
+        tester.element(find.byKey(const ValueKey<String>('todo-toggle-1'))),
+      ),
+      isNull,
+    );
+    expect(
+      GlassBackdrop.maybeOf(
+        tester.element(find.byKey(const ValueKey<String>('task-search-field'))),
+      ),
+      isNotNull,
+    );
+  });
+
   testWidgets('progress lens sits at the completed fraction', (
     WidgetTester tester,
   ) async {

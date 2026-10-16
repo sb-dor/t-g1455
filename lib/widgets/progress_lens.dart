@@ -22,56 +22,62 @@ class ProgressLens extends StatelessWidget {
                 DefaultTextStyle.of(context).style.color ??
                 Colors.white)
             .withValues(alpha: 0.18);
-    return Semantics(
-      label: '${(fraction * 100).round()}% complete',
-      child: ExcludeSemantics(
-        child: GlassTravel(
-          child: SizedBox(
-            height: kLensSize,
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                final double travel = constraints.maxWidth - kLensSize;
-                return Stack(
-                  children: <Widget>[
-                    Positioned.fill(
-                      child: RepaintBoundary(
-                        child: DecoratedBox(
-                          key: const ValueKey<String>('progress-track'),
-                          decoration: BoxDecoration(
-                            color: trackColor,
-                            borderRadius: BorderRadius.circular(kLensSize / 2),
+    return GlassBackdrop.live(
+      child: Semantics(
+        label: '${(fraction * 100).round()}% complete',
+        child: ExcludeSemantics(
+          child: GlassTravel(
+            child: SizedBox(
+              height: kLensSize,
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final double travel = constraints.maxWidth - kLensSize;
+                  return Stack(
+                    children: <Widget>[
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          child: DecoratedBox(
+                            key: const ValueKey<String>('progress-track'),
+                            decoration: BoxDecoration(
+                              color: trackColor,
+                              borderRadius: BorderRadius.circular(
+                                kLensSize / 2,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    AnimatedPositioned(
-                      duration: kLensDuration,
-                      curve: Curves.easeOutCubic,
-                      left: travel * fraction,
-                      top: 0,
-                      width: kLensSize,
-                      height: kLensSize,
-                      child: RepaintBoundary(
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0, end: 1),
-                          duration: const Duration(milliseconds: 400),
-                          builder: (BuildContext context, double m, _) =>
-                              SizedBox.square(
-                                dimension: kLensSize,
-                                child: GlassSurface(
-                                  key: const ValueKey<String>('progress-lens'),
-                                  borderRadius: kGlassCapsule,
-                                  finish: GlassFinish.clear,
-                                  labelled: false,
-                                  materialize: m,
+                      AnimatedPositioned(
+                        duration: kLensDuration,
+                        curve: Curves.easeOutCubic,
+                        left: travel * fraction,
+                        top: 0,
+                        width: kLensSize,
+                        height: kLensSize,
+                        child: RepaintBoundary(
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0, end: 1),
+                            duration: const Duration(milliseconds: 400),
+                            builder: (BuildContext context, double m, _) =>
+                                SizedBox.square(
+                                  dimension: kLensSize,
+                                  child: GlassSurface(
+                                    key: const ValueKey<String>(
+                                      'progress-lens',
+                                    ),
+                                    borderRadius: kGlassCapsule,
+                                    finish: GlassFinish.clear,
+                                    labelled: false,
+                                    materialize: m,
+                                  ),
                                 ),
-                              ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),

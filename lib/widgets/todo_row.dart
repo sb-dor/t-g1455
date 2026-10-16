@@ -160,15 +160,19 @@ class TodoRow extends StatelessWidget {
     );
 
     if (glass) {
-      return GlassCard(padding: const EdgeInsets.all(16), child: content);
+      return GlassBackdrop.live(
+        child: GlassCard(padding: const EdgeInsets.all(16), child: content),
+      );
     }
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xCC1A1D29),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+    return GlassBackdrop.live(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xCC1A1D29),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Padding(padding: const EdgeInsets.all(16), child: content),
       ),
-      child: Padding(padding: const EdgeInsets.all(16), child: content),
     );
   }
 }
