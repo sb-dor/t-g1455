@@ -1,122 +1,496 @@
 import 'package:flutter/material.dart';
+import 'package:g1455/g1455.dart';
+import 'package:t_g1455/todo_controller.dart';
+import 'package:t_g1455/todo_editor_sheet.dart';
+import 'package:t_g1455/todo_item.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await GlassHost.precache();
+  runApp(const App());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class App extends StatefulWidget {
+  const App({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  final TodoController _controller = TodoController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF7C5CFC),
+        brightness: Brightness.dark,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      scaffoldBackgroundColor: Colors.transparent,
+    ),
+    builder: (BuildContext context, Widget? child) => GlassHost(
+      richBackdrop: true,
+      minLabelContrast: kTextContrastAA,
+      backdrop: const Color(0xFF11131C),
+      adaptive: const GlassAdaptive(),
+      child: child!,
+    ),
+    home: TodoPage(controller: _controller),
+  );
+}
+
+class TodoPage extends StatelessWidget {
+  const TodoPage({required this.controller, super.key});
+
+  static const List<GlassTabItem> _tabs = <GlassTabItem>[
+    GlassTabItem(icon: Icons.list_alt, label: 'All'),
+    GlassTabItem(icon: Icons.radio_button_unchecked, label: 'Open'),
+    GlassTabItem(icon: Icons.task_alt, label: 'Done'),
+  ];
+
+  final TodoController controller;
+
+  Future<void> _openEditor(BuildContext context) async {
+    final TodoDraft? draft = await showGlassSheet<TodoDraft>(
+      context: context,
+      barrierLabel: 'Close task editor',
+      builder: (BuildContext context) => const TodoEditorSheet(),
+    );
+    if (draft == null) return;
+    controller.addTask(
+      title: draft.title,
+      notes: draft.notes,
+      priority: draft.priority,
     );
   }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+  Widget build(BuildContext context) => Scaffold(
+    body: _TodoBackdrop(
+      child: ListenableBuilder(
+        listenable: controller,
+        builder: (BuildContext context, Widget? child) => GlassScaffold(
+          host: false,
+          topBar: GlassBar(
+            padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.check_circle_outline),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'My Tasks',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                _FilterPopover(controller: controller),
+              ],
+            ),
+          ),
+          bottomBar: GlassTabBar(
+            items: _tabs,
+            selectedIndex: controller.view.index,
+            onSelected: (int index) =>
+                controller.selectView(TodoView.values[index]),
+          ),
+          floatingAction: GlassButtonGroup(
+            items: <GlassToolbarItem>[
+              GlassToolbarItem(
+                icon: const Icon(Icons.add),
+                label: 'Add task',
+                onPressed: () => _openEditor(context),
+              ),
+              GlassToolbarItem(
+                icon: const Icon(Icons.cleaning_services_outlined),
+                label: 'Clear completed',
+                onPressed: controller.completedCount == 0
+                    ? null
+                    : controller.clearCompleted,
+              ),
+            ],
+          ),
+          body: controller.items.isEmpty
+              ? const _EmptyTodos()
+              : _TodoList(controller: controller),
+        ),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+    ),
+  );
+}
+
+class _FilterPopover extends StatelessWidget {
+  const _FilterPopover({required this.controller});
+
+  final TodoController controller;
+
+  @override
+  Widget build(BuildContext context) => GlassPopoverAnchor(
+    width: 280,
+    radius: 28,
+    barrierLabel: 'Close task filters',
+    popoverBuilder: (BuildContext context) => ListenableBuilder(
+      listenable: controller,
+      builder: (BuildContext context, Widget? child) => Padding(
+        padding: const EdgeInsets.all(18),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const Text(
+              'Sort tasks',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            GlassSegmentedControl(
+              segments: const <Widget>[Text('Newest'), Text('A–Z')],
+              selectedIndex: controller.sort.index,
+              onSelected: (int index) =>
+                  controller.selectSort(TodoSort.values[index]),
+            ),
+            const SizedBox(height: 14),
+            MergeSemantics(
+              child: Row(
+                children: <Widget>[
+                  const Expanded(child: Text('Show completed')),
+                  GlassSwitch(
+                    key: const ValueKey<String>('show-completed-switch'),
+                    value: controller.showCompleted,
+                    onChanged: controller.setShowCompleted,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    ),
+    builder: (BuildContext context, GlassMenuController popover) => Semantics(
+      button: true,
+      label: 'Sort and filter tasks',
+      child: GestureDetector(
+        key: const ValueKey<String>('filter-popover-button'),
+        behavior: HitTestBehavior.opaque,
+        onTap: popover.open,
+        child: const SizedBox.square(dimension: 44, child: Icon(Icons.tune)),
       ),
+    ),
+  );
+}
+
+class _TodoList extends StatelessWidget {
+  const _TodoList({required this.controller});
+
+  final TodoController controller;
+
+  String get _emptyMessage => controller.query.trim().isNotEmpty
+      ? 'No matching tasks'
+      : switch (controller.view) {
+          TodoView.all => 'No tasks yet',
+          TodoView.open => 'No open tasks',
+          TodoView.done => 'Nothing completed',
+        };
+
+  @override
+  Widget build(BuildContext context) {
+    final EdgeInsets bars = MediaQuery.paddingOf(context);
+    final List<TodoItem> items = controller.visibleItems;
+    return ListView(
+      padding: EdgeInsets.fromLTRB(16, bars.top + 12, 16, bars.bottom + 12),
+      children: <Widget>[
+        GlassTextField.search(
+          key: const ValueKey<String>('task-search-field'),
+          onChanged: controller.setQuery,
+        ),
+        const SizedBox(height: 14),
+        GlassCard(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.insights_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '${controller.completedCount} of ${controller.items.length} complete',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      controller.completedCount == controller.items.length
+                          ? 'Everything is checked off.'
+                          : 'One small step at a time.',
+                      style: TextStyle(
+                        color: DefaultTextStyle.of(context).style.color
+                            ?.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        if (items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 72),
+            child: Text(
+              _emptyMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
+          )
+        else
+          for (final TodoItem item in items) ...<Widget>[
+            _TodoRow(item: item, controller: controller),
+            const SizedBox(height: 10),
+          ],
+      ],
     );
   }
+}
+
+class _TodoRow extends StatelessWidget {
+  const _TodoRow({required this.item, required this.controller});
+
+  final TodoItem item;
+  final TodoController controller;
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final bool? confirmed = await showGlassDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => GlassAlert(
+        title: Text('Delete "${item.title}"?', textAlign: TextAlign.center),
+        message: const Text(
+          'This action cannot be undone.',
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          GlassAlertAction(
+            label: 'Delete',
+            isDestructive: true,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) controller.deleteTask(item.id);
+  }
+
+  Future<void> _openEditor(BuildContext context) async {
+    final TodoDraft? draft = await showGlassSheet<TodoDraft>(
+      context: context,
+      barrierLabel: 'Close task editor',
+      builder: (BuildContext context) => TodoEditorSheet(
+        heading: 'Edit task',
+        submitLabel: 'Save changes',
+        initialTitle: item.title,
+        initialNotes: item.notes,
+        initialPriority: item.priority,
+      ),
+    );
+    if (draft == null) return;
+    controller.updateTask(
+      item.id,
+      title: draft.title,
+      notes: draft.notes,
+      priority: draft.priority,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xCC1A1D29),
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: <Widget>[
+          GlassSwitch(
+            key: ValueKey<String>('todo-toggle-${item.id}'),
+            value: item.isCompleted,
+            onChanged: (bool value) => controller.setCompleted(item.id, value),
+            semanticLabel: 'Complete ${item.title}',
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              key: ValueKey<String>('edit-task-${item.id}'),
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _openEditor(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.circle,
+                        size: 10,
+                        color: switch (item.priority) {
+                          TodoPriority.low => const Color(0xFF43D9AD),
+                          TodoPriority.medium => const Color(0xFFFFCC66),
+                          TodoPriority.high => const Color(0xFFFF6B7A),
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            decoration: item.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color: item.isCompleted
+                                ? const Color(0x99FFFFFF)
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (item.notes.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Text(
+                      item.notes,
+                      style: const TextStyle(color: Color(0xB3FFFFFF)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GlassMenuAnchor(
+            width: 210,
+            barrierLabel: 'Close task actions',
+            items: <GlassMenuItem>[
+              GlassMenuItem(
+                label: 'Delete',
+                icon: const Icon(Icons.delete_outline, size: 20),
+                isDestructive: true,
+                onPressed: () => _confirmDelete(context),
+              ),
+            ],
+            builder: (BuildContext context, GlassMenuController menu) =>
+                Semantics(
+                  button: true,
+                  label: 'Actions for ${item.title}',
+                  child: GestureDetector(
+                    key: ValueKey<String>('task-menu-${item.id}'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: menu.open,
+                    child: const SizedBox.square(
+                      dimension: 44,
+                      child: Icon(Icons.more_horiz),
+                    ),
+                  ),
+                ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _EmptyTodos extends StatelessWidget {
+  const _EmptyTodos();
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    children: const <Widget>[
+      SizedBox(height: 96),
+      Icon(Icons.task_alt, size: 64, color: Color(0x99FFFFFF)),
+      SizedBox(height: 18),
+      Text(
+        'No tasks yet',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+      ),
+      SizedBox(height: 8),
+      Text(
+        'Tap + to add your first task.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Color(0xB3FFFFFF)),
+      ),
+    ],
+  );
+}
+
+class _TodoBackdrop extends StatelessWidget {
+  const _TodoBackdrop({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: <Color>[
+          Color(0xFF11131C),
+          Color(0xFF252044),
+          Color(0xFF172F3D),
+        ],
+      ),
+    ),
+    child: Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        const Positioned(
+          top: 110,
+          right: -70,
+          child: _Glow(color: Color(0x667C5CFC), size: 240),
+        ),
+        const Positioned(
+          bottom: 80,
+          left: -90,
+          child: _Glow(color: Color(0x5543D9AD), size: 270),
+        ),
+        child,
+      ],
+    ),
+  );
+}
+
+class _Glow extends StatelessWidget {
+  const _Glow({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(
+        colors: <Color>[color, color.withValues(alpha: 0)],
+      ),
+    ),
+  );
 }
