@@ -9,15 +9,15 @@ Future<void> pumpApp(WidgetTester tester, {TodoController? controller}) async {
 }
 
 Future<void> addTask(WidgetTester tester, String title) async {
-  await tester.tap(find.byIcon(Icons.add));
+  await tester.tap(find.byKey(const ValueKey<String>('quick-add-button')));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump(const Duration(milliseconds: 800));
   await tester.enterText(
-    find.byKey(const ValueKey<String>('task-title-field')),
+    find.byKey(const ValueKey<String>('quick-add-field')),
     title,
   );
   await tester.pump();
-  await tester.tap(find.text('Add task'));
+  await tester.tap(find.byKey(const ValueKey<String>('quick-add-submit')));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 700));
+  await tester.pump(const Duration(milliseconds: 800));
 }

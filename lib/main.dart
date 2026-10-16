@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/todo_controller.dart';
-import 'package:t_g1455/todo_editor_sheet.dart';
 import 'package:t_g1455/todo_item.dart';
+import 'package:t_g1455/widgets/quick_add_morph.dart';
 import 'package:t_g1455/widgets/todo_row.dart';
 
 Future<void> main() async {
@@ -73,17 +73,6 @@ class TodoPage extends StatelessWidget {
     const GlassTabItem(icon: Icons.task_alt, label: 'Done'),
   ];
 
-  Future<void> _openEditor(BuildContext context) async {
-    final TodoDraft? draft = await showTodoEditor(context);
-    if (draft == null) return;
-    controller.addTask(
-      title: draft.title,
-      notes: draft.notes,
-      priority: draft.priority,
-      estimate: draft.estimate,
-    );
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
     body: _TodoBackdrop(
@@ -113,15 +102,7 @@ class TodoPage extends StatelessWidget {
             onSelected: (int index) =>
                 controller.selectView(TodoView.values[index]),
           ),
-          floatingAction: GlassButtonGroup(
-            items: <GlassToolbarItem>[
-              GlassToolbarItem(
-                icon: const Icon(Icons.add),
-                label: 'Add task',
-                onPressed: () => _openEditor(context),
-              ),
-            ],
-          ),
+          floatingAction: QuickAddMorph(controller: controller),
           body: controller.items.isEmpty
               ? const _EmptyTodos()
               : _TodoList(controller: controller),

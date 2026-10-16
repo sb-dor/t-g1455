@@ -21,9 +21,12 @@ void main() {
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-button')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-details')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
 
     expect(find.text('New task'), findsOneWidget);
 
@@ -40,22 +43,87 @@ void main() {
     expect(find.text('No tasks yet'), findsNothing);
   });
 
+  testWidgets('quick add adds a task and closes', (WidgetTester tester) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('quick-add-field')),
+      'Water plants',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+
+    expect(find.text('Water plants'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('quick-add-field')), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('quick-add-button')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('quick add ignores a blank title', (WidgetTester tester) async {
+    final TodoController controller = TodoController();
+    await pumpApp(tester, controller: controller);
+
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('quick-add-field')),
+      '   ',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-submit')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+
+    expect(controller.items, isEmpty);
+    expect(
+      find.byKey(const ValueKey<String>('quick-add-field')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('more details opens the full editor with the title', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('quick-add-field')),
+      'Plan trip',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey<String>('quick-add-details')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+
+    expect(find.text('New task'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(
+            find.byKey(const ValueKey<String>('task-title-field')),
+          )
+          .controller!
+          .text,
+      'Plan trip',
+    );
+  });
+
   testWidgets('completes a task and filters open and done views', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('task-title-field')),
-      'Ship the app',
-    );
-    await tester.pump();
-    await tester.tap(find.text('Add task'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    await addTask(tester, 'Ship the app');
 
     await tester.tap(find.byKey(const ValueKey<String>('todo-toggle-1')));
     await tester.pump();
