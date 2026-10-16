@@ -52,7 +52,14 @@ class _LabSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   const _LedgerReadout(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  _SwitchRow(
+                    switchKey: 'lab-light-theme',
+                    label: 'Light theme',
+                    value: lab.lightTheme,
+                    onChanged: lab.setLightTheme,
+                  ),
+                  const SizedBox(height: 8),
                   const Text('Finish'),
                   const SizedBox(height: 8),
                   GlassSegmentedControl(

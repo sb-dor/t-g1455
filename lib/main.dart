@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/lab/lab_settings.dart';
 import 'package:t_g1455/lab/lab_sheet.dart';
@@ -37,34 +38,51 @@ class _AppState extends State<App> {
     super.dispose();
   }
 
+  static ThemeData _theme(Brightness brightness) => ThemeData(
+    brightness: brightness,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xFF7C5CFC),
+      brightness: brightness,
+    ),
+    scaffoldBackgroundColor: Colors.transparent,
+  );
+
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF7C5CFC),
-        brightness: Brightness.dark,
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    // Only the theme switch rebuilds the app; every other Lab knob rebuilds
+    // just the host below.
+    valueListenable: _lab.lightThemeListenable,
+    builder: (BuildContext context, bool light, Widget? _) => MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: _theme(Brightness.light),
+      darkTheme: _theme(Brightness.dark),
+      themeMode: light ? ThemeMode.light : ThemeMode.dark,
+      builder: (BuildContext context, Widget? child) => ListenableBuilder(
+        listenable: _lab,
+        // g1455 picks the branch of `.regular` from the platform brightness,
+        // so the glass follows the app's theme rather than the device's.
+        builder: (BuildContext context, Widget? _) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(platformBrightness: _lab.brightness),
+          child: GlassHost(
+            finish: _lab.finish.glassFinish,
+            tier: _lab.tier,
+            ripple: _lab.glassRipple,
+            dropMotion: _lab.dropMotion,
+            press: _lab.glassPress,
+            adaptive: _lab.glassAdaptive,
+            highContrast: _lab.glassHighContrast,
+            richBackdrop: true,
+            minLabelContrast: kTextContrastAA,
+            backdrop: _lab.lightTheme
+                ? kTodoBackdropLightColor
+                : kTodoBackdropColor,
+            child: child!,
+          ),
+        ),
       ),
-      scaffoldBackgroundColor: Colors.transparent,
+      home: TodoPage(controller: _controller, lab: _lab),
     ),
-    builder: (BuildContext context, Widget? child) => ListenableBuilder(
-      listenable: _lab,
-      builder: (BuildContext context, Widget? _) => GlassHost(
-        finish: _lab.finish.glassFinish,
-        tier: _lab.tier,
-        ripple: _lab.glassRipple,
-        dropMotion: _lab.dropMotion,
-        press: _lab.glassPress,
-        adaptive: _lab.glassAdaptive,
-        highContrast: _lab.glassHighContrast,
-        richBackdrop: true,
-        minLabelContrast: kTextContrastAA,
-        backdrop: const Color(0xFF11131C),
-        child: child!,
-      ),
-    ),
-    home: TodoPage(controller: _controller, lab: _lab),
   );
 }
 
@@ -102,9 +120,20 @@ class _TodoPageState extends State<TodoPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final Brightness brightness = Theme.of(context).brightness;
+    final TodoBackdropPainter backdrop = todoBackdropFor(brightness);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: brightness == Brightness.light
+          ? SystemUiOverlayStyle.dark
+          : SystemUiOverlayStyle.light,
+      child: _page(backdrop),
+    );
+  }
+
+  Widget _page(TodoBackdropPainter backdrop) => Scaffold(
     body: GlassBackdrop.painter(
-      kTodoBackdrop,
+      backdrop,
       child: GlassBackdrop.live(
         child: GlassScaffold(
           host: false,
@@ -128,7 +157,7 @@ class _TodoPageState extends State<TodoPage> {
           bottomBar: _TabBarSection(controller: widget.controller),
           floatingAction: QuickAddMorph(controller: widget.controller),
           body: GlassBackdrop.painter(
-            kTodoBackdrop,
+            backdrop,
             paintBackdrop: false,
             child: ListenableBuilder(
               listenable: Listenable.merge(<Listenable>[
@@ -469,17 +498,23 @@ class _EmptyTodos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-    children: const <Widget>[
-      SizedBox(height: 96),
-      Icon(Icons.task_alt, size: 64, color: Color(0x99FFFFFF)),
-      SizedBox(height: 18),
-      Text(
+    children: <Widget>[
+      const SizedBox(height: 96),
+      Icon(
+        Icons.task_alt,
+        size: 64,
+        color: Theme.of(context).brightness == Brightness.light
+            ? const Color(0x99000000)
+            : const Color(0x99FFFFFF),
+      ),
+      const SizedBox(height: 18),
+      const Text(
         'No tasks yet',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
       ),
-      SizedBox(height: 24),
-      TipsCarousel(),
+      const SizedBox(height: 24),
+      const TipsCarousel(),
     ],
   );
 }

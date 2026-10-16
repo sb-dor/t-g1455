@@ -5,7 +5,8 @@
 //   flutter run -t repro/sim_pass.dart --dart-define=FINISH=frosted \
 //     --dart-define=REDUCE=true --dart-define=CHEAP=true \
 //     --dart-define=ADAPTIVE=false --dart-define=CONTRAST=true \
-//     --dart-define=ROWS=true --dart-define=OUTLINES=true --dart-define=TASKS=12
+//     --dart-define=ROWS=true --dart-define=OUTLINES=true --dart-define=TASKS=12 \
+//     --dart-define=LIGHT=true
 import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/lab/lab_settings.dart';
@@ -34,7 +35,8 @@ Future<void> main() async {
     ..setAdaptive(const bool.fromEnvironment('ADAPTIVE', defaultValue: true))
     ..setHighContrast(const bool.fromEnvironment('CONTRAST'))
     ..setGlassRows(const bool.fromEnvironment('ROWS'))
-    ..setRipple(const bool.fromEnvironment('RIPPLE'));
+    ..setRipple(const bool.fromEnvironment('RIPPLE'))
+    ..setLightTheme(const bool.fromEnvironment('LIGHT'));
   runApp(App(controller: tasks, lab: lab));
   if (const bool.fromEnvironment('OUTLINES')) {
     WidgetsBinding.instance.addPostFrameCallback(

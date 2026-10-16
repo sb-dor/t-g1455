@@ -35,6 +35,18 @@ class LabSettings extends ChangeNotifier {
   bool _highContrast = false;
   bool _debugOutlines = false;
   bool _glassRows = false;
+  final ValueNotifier<bool> _lightTheme = ValueNotifier<bool>(false);
+
+  /// The app's colour theme: dark (the default) or light. A preference, not a
+  /// glass experiment, so it is not one of [hasChanges] and [reset] keeps it.
+  bool get lightTheme => _lightTheme.value;
+
+  /// Notifies only when [lightTheme] flips, so `MaterialApp` can rebuild for a
+  /// theme change without rebuilding for every other Lab knob.
+  ValueListenable<bool> get lightThemeListenable => _lightTheme;
+
+  Brightness get brightness =>
+      _lightTheme.value ? Brightness.light : Brightness.dark;
 
   LabFinish get finish => _finish;
   bool get reduceTransparency => _reduceTransparency;
@@ -113,6 +125,18 @@ class LabSettings extends ChangeNotifier {
     if (_glassRows == value) return;
     _glassRows = value;
     notifyListeners();
+  }
+
+  void setLightTheme(bool value) {
+    if (_lightTheme.value == value) return;
+    _lightTheme.value = value;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _lightTheme.dispose();
+    super.dispose();
   }
 
   GlassTierChoice get tier => GlassTierPolicy(

@@ -63,6 +63,10 @@ class TodoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Secondary ink for the plain row: white on the dark page, near-black on
+    // the light one, at the same alphas as before.
+    final bool light = Theme.of(context).brightness == Brightness.light;
+    final Color ink = light ? const Color(0xFF1B1B24) : const Color(0xFFFFFFFF);
     final Widget content = Row(
       children: <Widget>[
         GlassSwitch(
@@ -102,7 +106,7 @@ class TodoRow extends StatelessWidget {
                               ? TextDecoration.lineThrough
                               : null,
                           color: item.isCompleted && !glass
-                              ? const Color(0x99FFFFFF)
+                              ? ink.withAlpha(0x99)
                               : null,
                         ),
                       ),
@@ -113,17 +117,13 @@ class TodoRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     item.notes,
-                    style: glass
-                        ? null
-                        : const TextStyle(color: Color(0xB3FFFFFF)),
+                    style: glass ? null : TextStyle(color: ink.withAlpha(0xB3)),
                   ),
                 ],
                 const SizedBox(height: 4),
                 Text(
                   pomodoroLabel(item.estimate),
-                  style: glass
-                      ? null
-                      : const TextStyle(color: Color(0x99FFFFFF)),
+                  style: glass ? null : TextStyle(color: ink.withAlpha(0x99)),
                 ),
               ],
             ),
@@ -167,9 +167,9 @@ class TodoRow extends StatelessWidget {
     return GlassBackdrop.live(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: const Color(0xCC1A1D29),
+          color: light ? const Color(0xCCFFFFFF) : const Color(0xCC1A1D29),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: ink.withValues(alpha: 0.08)),
         ),
         child: Padding(padding: const EdgeInsets.all(16), child: content),
       ),
