@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:t_g1455/todo_controller.dart';
 
-import 'package:t_g1455/main.dart';
+import 'helpers.dart';
 
 void main() {
   testWidgets('shows an empty todo list with an add action', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
+    await pumpApp(tester);
 
     expect(find.text('My Tasks'), findsOneWidget);
     expect(find.text('No tasks yet'), findsOneWidget);
@@ -18,8 +18,7 @@ void main() {
   testWidgets('adds a task from the glass editor sheet', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
+    await pumpApp(tester);
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
@@ -43,8 +42,7 @@ void main() {
   testWidgets('completes a task and filters open and done views', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
+    await pumpApp(tester);
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
@@ -73,11 +71,10 @@ void main() {
   });
 
   testWidgets('searches tasks by title', (WidgetTester tester) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
+    await pumpApp(tester);
 
-    await _addTask(tester, 'Buy groceries');
-    await _addTask(tester, 'Call the dentist');
+    await addTask(tester, 'Buy groceries');
+    await addTask(tester, 'Call the dentist');
 
     await tester.enterText(
       find.byKey(const ValueKey<String>('task-search-field')),
@@ -92,11 +89,10 @@ void main() {
   testWidgets('sorts tasks and hides completed tasks from the popover', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
+    await pumpApp(tester);
 
-    await _addTask(tester, 'Apple');
-    await _addTask(tester, 'Zulu');
+    await addTask(tester, 'Apple');
+    await addTask(tester, 'Zulu');
     await tester.tap(find.byKey(const ValueKey<String>('todo-toggle-1')));
     await tester.pump();
 
@@ -127,9 +123,8 @@ void main() {
   testWidgets('deletes a task after glass confirmation', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
-    await _addTask(tester, 'Read a book');
+    await pumpApp(tester);
+    await addTask(tester, 'Read a book');
 
     await tester.tap(find.byKey(const ValueKey<String>('task-menu-1')));
     await tester.pump();
@@ -152,9 +147,8 @@ void main() {
   testWidgets('edits a task by tapping its content', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
-    await _addTask(tester, 'Old title');
+    await pumpApp(tester);
+    await addTask(tester, 'Old title');
 
     await tester.tap(find.byKey(const ValueKey<String>('edit-task-1')));
     await tester.pump();
@@ -178,9 +172,8 @@ void main() {
   testWidgets('clears completed tasks from the glass action group', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const App());
-    await tester.pump();
-    await _addTask(tester, 'Finished task');
+    await pumpApp(tester);
+    await addTask(tester, 'Finished task');
     await tester.tap(find.byKey(const ValueKey<String>('todo-toggle-1')));
     await tester.pump();
 
@@ -190,18 +183,12 @@ void main() {
     expect(find.text('Finished task'), findsNothing);
     expect(find.text('No tasks yet'), findsOneWidget);
   });
-}
 
-Future<void> _addTask(WidgetTester tester, String title) async {
-  await tester.tap(find.byIcon(Icons.add));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 300));
-  await tester.enterText(
-    find.byKey(const ValueKey<String>('task-title-field')),
-    title,
-  );
-  await tester.pump();
-  await tester.tap(find.text('Add task'));
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 700));
+  testWidgets('uses an injected controller', (WidgetTester tester) async {
+    final TodoController controller = TodoController()
+      ..addTask(title: 'Seeded');
+    await pumpApp(tester, controller: controller);
+
+    expect(find.text('Seeded'), findsOneWidget);
+  });
 }
