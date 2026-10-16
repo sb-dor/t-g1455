@@ -54,13 +54,24 @@ class _AppState extends State<App> {
 class TodoPage extends StatelessWidget {
   const TodoPage({required this.controller, super.key});
 
-  static const List<GlassTabItem> _tabs = <GlassTabItem>[
-    GlassTabItem(icon: Icons.list_alt, label: 'All'),
-    GlassTabItem(icon: Icons.radio_button_unchecked, label: 'Open'),
-    GlassTabItem(icon: Icons.task_alt, label: 'Done'),
-  ];
-
   final TodoController controller;
+
+  List<GlassTabItem> get _tabs => <GlassTabItem>[
+    const GlassTabItem(icon: Icons.list_alt, label: 'All'),
+    GlassTabItem(
+      label: 'Open',
+      iconBuilder: (BuildContext context, GlassTabItemLook look) => GlassBadge(
+        key: const ValueKey<String>('open-tab-badge'),
+        count: controller.openCount,
+        child: Icon(
+          Icons.radio_button_unchecked,
+          color: look.color,
+          size: look.iconSize,
+        ),
+      ),
+    ),
+    const GlassTabItem(icon: Icons.task_alt, label: 'Done'),
+  ];
 
   Future<void> _openEditor(BuildContext context) async {
     final TodoDraft? draft = await showGlassSheet<TodoDraft>(
@@ -111,13 +122,6 @@ class TodoPage extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 label: 'Add task',
                 onPressed: () => _openEditor(context),
-              ),
-              GlassToolbarItem(
-                icon: const Icon(Icons.cleaning_services_outlined),
-                label: 'Clear completed',
-                onPressed: controller.completedCount == 0
-                    ? null
-                    : controller.clearCompleted,
               ),
             ],
           ),
@@ -209,9 +213,11 @@ class _TodoList extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.fromLTRB(16, bars.top + 12, 16, bars.bottom + 12),
       children: <Widget>[
-        GlassTextField.search(
+        GlassSearchBar(
           key: const ValueKey<String>('task-search-field'),
+          placeholder: 'Search tasks',
           onChanged: controller.setQuery,
+          onCancel: () => controller.setQuery(''),
         ),
         const SizedBox(height: 14),
         GlassCard(
@@ -243,6 +249,29 @@ class _TodoList extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: GlassButtonGroup(
+            key: const ValueKey<String>('header-toolbar'),
+            items: <GlassToolbarItem>[
+              GlassToolbarItem(
+                icon: const Icon(Icons.done_all),
+                label: 'Complete all',
+                onPressed: controller.openCount == 0
+                    ? null
+                    : controller.completeAll,
+              ),
+              GlassToolbarItem(
+                icon: const Icon(Icons.cleaning_services_outlined),
+                label: 'Clear completed',
+                onPressed: controller.completedCount == 0
+                    ? null
+                    : controller.clearCompleted,
               ),
             ],
           ),

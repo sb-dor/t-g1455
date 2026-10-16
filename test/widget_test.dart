@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:g1455/g1455.dart';
 import 'package:t_g1455/todo_controller.dart';
 
 import 'helpers.dart';
@@ -84,6 +85,58 @@ void main() {
 
     expect(find.text('Buy groceries'), findsOneWidget);
     expect(find.text('Call the dentist'), findsNothing);
+  });
+
+  testWidgets('cancel clears the search', (WidgetTester tester) async {
+    await pumpApp(tester);
+    await addTask(tester, 'Buy groceries');
+    await addTask(tester, 'Call the dentist');
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('task-search-field')),
+      'grocer',
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Call the dentist'), findsNothing);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Buy groceries'), findsOneWidget);
+    expect(find.text('Call the dentist'), findsOneWidget);
+  });
+
+  testWidgets('open tab badge shows the open count', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester);
+    await addTask(tester, 'First');
+    await addTask(tester, 'Second');
+
+    GlassBadge badge() => tester.widget<GlassBadge>(
+      find.byKey(const ValueKey<String>('open-tab-badge')),
+    );
+
+    expect(badge().count, 2);
+
+    await tester.tap(find.byKey(const ValueKey<String>('todo-toggle-1')));
+    await tester.pump();
+
+    expect(badge().count, 1);
+  });
+
+  testWidgets('complete all completes every task', (WidgetTester tester) async {
+    await pumpApp(tester);
+    await addTask(tester, 'First');
+    await addTask(tester, 'Second');
+
+    await tester.tap(find.byIcon(Icons.done_all));
+    await tester.pump();
+
+    expect(find.text('2 of 2 complete'), findsOneWidget);
   });
 
   testWidgets('sorts tasks and hides completed tasks from the popover', (
