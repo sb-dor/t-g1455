@@ -42,16 +42,14 @@ class TodoRow extends StatelessWidget {
   }
 
   Future<void> _openEditor(BuildContext context) async {
-    final TodoDraft? draft = await showGlassSheet<TodoDraft>(
-      context: context,
-      barrierLabel: 'Close task editor',
-      builder: (BuildContext context) => TodoEditorSheet(
-        heading: 'Edit task',
-        submitLabel: 'Save changes',
-        initialTitle: item.title,
-        initialNotes: item.notes,
-        initialPriority: item.priority,
-      ),
+    final TodoDraft? draft = await showTodoEditor(
+      context,
+      heading: 'Edit task',
+      submitLabel: 'Save changes',
+      initialTitle: item.title,
+      initialNotes: item.notes,
+      initialPriority: item.priority,
+      initialEstimate: item.estimate,
     );
     if (draft == null) return;
     controller.updateTask(
@@ -59,7 +57,7 @@ class TodoRow extends StatelessWidget {
       title: draft.title,
       notes: draft.notes,
       priority: draft.priority,
-      estimate: item.estimate,
+      estimate: draft.estimate,
     );
   }
 
@@ -125,6 +123,11 @@ class TodoRow extends StatelessWidget {
                       style: const TextStyle(color: Color(0xB3FFFFFF)),
                     ),
                   ],
+                  const SizedBox(height: 4),
+                  Text(
+                    pomodoroLabel(item.estimate),
+                    style: const TextStyle(color: Color(0x99FFFFFF)),
+                  ),
                 ],
               ),
             ),

@@ -3,6 +3,9 @@ enum TodoPriority { low, medium, high }
 const int kMinEstimate = 1;
 const int kMaxEstimate = 10;
 
+String pomodoroLabel(int count) =>
+    count == 1 ? '$count pomodoro' : '$count pomodoros';
+
 extension TodoPriorityLabel on TodoPriority {
   String get label => switch (this) {
     TodoPriority.low => 'Low',

@@ -74,16 +74,13 @@ class TodoPage extends StatelessWidget {
   ];
 
   Future<void> _openEditor(BuildContext context) async {
-    final TodoDraft? draft = await showGlassSheet<TodoDraft>(
-      context: context,
-      barrierLabel: 'Close task editor',
-      builder: (BuildContext context) => const TodoEditorSheet(),
-    );
+    final TodoDraft? draft = await showTodoEditor(context);
     if (draft == null) return;
     controller.addTask(
       title: draft.title,
       notes: draft.notes,
       priority: draft.priority,
+      estimate: draft.estimate,
     );
   }
 

@@ -2,17 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/todo_item.dart';
 
+const double _kSheetPadding = 20;
+
 class TodoDraft {
   const TodoDraft({
     required this.title,
     required this.notes,
     required this.priority,
+    required this.estimate,
   });
 
   final String title;
   final String notes;
   final TodoPriority priority;
+  final int estimate;
 }
+
+Future<TodoDraft?> showTodoEditor(
+  BuildContext context, {
+  String heading = 'New task',
+  String submitLabel = 'Add task',
+  String initialTitle = '',
+  String initialNotes = '',
+  TodoPriority initialPriority = TodoPriority.medium,
+  int initialEstimate = 1,
+}) => showGlassSheet<TodoDraft>(
+  context: context,
+  barrierLabel: 'Close task editor',
+  detents: <GlassSheetDetent>[GlassSheetDetent.medium, GlassSheetDetent.large],
+  builder: (BuildContext context) => TodoEditorSheet(
+    heading: heading,
+    submitLabel: submitLabel,
+    initialTitle: initialTitle,
+    initialNotes: initialNotes,
+    initialPriority: initialPriority,
+    initialEstimate: initialEstimate,
+  ),
+);
 
 class TodoEditorSheet extends StatefulWidget {
   const TodoEditorSheet({
@@ -21,6 +47,7 @@ class TodoEditorSheet extends StatefulWidget {
     this.initialTitle = '',
     this.initialNotes = '',
     this.initialPriority = TodoPriority.medium,
+    this.initialEstimate = 1,
     super.key,
   });
 
@@ -29,6 +56,7 @@ class TodoEditorSheet extends StatefulWidget {
   final String initialTitle;
   final String initialNotes;
   final TodoPriority initialPriority;
+  final int initialEstimate;
 
   @override
   State<TodoEditorSheet> createState() => _TodoEditorSheetState();
@@ -38,10 +66,17 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
   late final TextEditingController _title;
   late final TextEditingController _notes;
   late double _priority;
+  late int _estimate;
+
+  static double _valueOf(TodoPriority priority) => switch (priority) {
+    TodoPriority.low => 0,
+    TodoPriority.medium => 0.5,
+    TodoPriority.high => 1,
+  };
 
   TodoPriority get _selectedPriority => switch (_priority) {
-    < 0.34 => TodoPriority.low,
-    < 0.67 => TodoPriority.medium,
+    < 0.25 => TodoPriority.low,
+    < 0.75 => TodoPriority.medium,
     _ => TodoPriority.high,
   };
 
@@ -50,11 +85,8 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
     super.initState();
     _title = TextEditingController(text: widget.initialTitle);
     _notes = TextEditingController(text: widget.initialNotes);
-    _priority = switch (widget.initialPriority) {
-      TodoPriority.low => 0.15,
-      TodoPriority.medium => 0.5,
-      TodoPriority.high => 0.85,
-    };
+    _priority = _valueOf(widget.initialPriority);
+    _estimate = widget.initialEstimate.clamp(kMinEstimate, kMaxEstimate);
   }
 
   @override
@@ -73,6 +105,7 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
         title: title,
         notes: _notes.text.trim(),
         priority: _selectedPriority,
+        estimate: _estimate,
       ),
     );
   }
@@ -85,7 +118,9 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
       fillColor: label.withValues(alpha: 0.08),
       hintStyle: TextStyle(color: label.withValues(alpha: 0.45)),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(
+          GlassConcentric.radius(kGlassSheetRadius, _kSheetPadding),
+        ),
         borderSide: BorderSide.none,
       ),
     );
@@ -98,9 +133,9 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
           data: IconThemeData(color: label),
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
-              20,
+              _kSheetPadding,
               8,
-              20,
+              _kSheetPadding,
               24 + MediaQuery.viewInsetsOf(context).bottom,
             ),
             child: Theme(
@@ -139,15 +174,54 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
                   const SizedBox(height: 20),
                   Row(
                     children: <Widget>[
-                      const Icon(Icons.flag_outlined, size: 20),
-                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text('Estimate: ${pomodoroLabel(_estimate)}'),
+                      ),
+                      GlassStepper(
+                        key: const ValueKey<String>('estimate-stepper'),
+                        value: _estimate.toDouble(),
+                        min: kMinEstimate.toDouble(),
+                        max: kMaxEstimate.toDouble(),
+                        semanticLabel: 'Estimate in pomodoros',
+                        onChanged: (double value) =>
+                            setState(() => _estimate = value.round()),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: <Widget>[
                       const Text('Priority'),
+                      const SizedBox(width: 12),
+                      GlassGroup(
+                        spacing: 8,
+                        finish: GlassFinish.clear,
+                        labelled: false,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            for (final TodoPriority priority
+                                in TodoPriority.values) ...<Widget>[
+                              if (priority != TodoPriority.low)
+                                const SizedBox(width: 6),
+                              _PriorityBlob(
+                                priority: priority,
+                                selected: priority == _selectedPriority,
+                                onTap: () => setState(
+                                  () => _priority = _valueOf(priority),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                       const Spacer(),
                       Text('${_selectedPriority.label} priority'),
                     ],
                   ),
                   GlassSlider(
                     value: _priority,
+                    divisions: 2,
                     onChanged: (double value) =>
                         setState(() => _priority = value),
                     semanticLabel: 'Task priority',
@@ -166,4 +240,40 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
       ),
     );
   }
+}
+
+class _PriorityBlob extends StatelessWidget {
+  const _PriorityBlob({
+    required this.priority,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final TodoPriority priority;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    key: ValueKey<String>('priority-blob-${priority.name}'),
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: Semantics(
+      button: true,
+      selected: selected,
+      label: '${priority.label} priority',
+      child: SizedBox.square(
+        dimension: 26,
+        child: Center(
+          child: SizedBox.square(
+            dimension: selected ? 26 : 14,
+            child: const GlassSurface(
+              borderRadius: kGlassCapsule,
+              labelled: false,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
