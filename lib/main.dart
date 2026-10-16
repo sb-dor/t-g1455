@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
 import 'package:t_g1455/lab/lab_settings.dart';
+import 'package:t_g1455/lab/lab_sheet.dart';
 import 'package:t_g1455/todo_controller.dart';
 import 'package:t_g1455/todo_item.dart';
 import 'package:t_g1455/widgets/progress_lens.dart';
@@ -63,14 +64,15 @@ class _AppState extends State<App> {
         child: child!,
       ),
     ),
-    home: TodoPage(controller: _controller),
+    home: TodoPage(controller: _controller, lab: _lab),
   );
 }
 
 class TodoPage extends StatelessWidget {
-  const TodoPage({required this.controller, super.key});
+  const TodoPage({required this.controller, required this.lab, super.key});
 
   final TodoController controller;
+  final LabSettings lab;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -91,6 +93,7 @@ class TodoPage extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ),
+                _LabButton(lab: lab),
                 _FilterPopover(controller: controller),
               ],
             ),
@@ -101,11 +104,11 @@ class TodoPage extends StatelessWidget {
             kTodoBackdrop,
             paintBackdrop: false,
             child: ListenableBuilder(
-              listenable: controller,
+              listenable: Listenable.merge(<Listenable>[controller, lab]),
               builder: (BuildContext context, Widget? child) =>
                   controller.items.isEmpty
                   ? const _EmptyTodos()
-                  : _TodoList(controller: controller),
+                  : _TodoList(controller: controller, lab: lab),
             ),
           ),
         ),
@@ -280,10 +283,42 @@ class _FilterPopover extends StatelessWidget {
   );
 }
 
+/// Opens the Glass Lab. A dot on the icon says some setting is off its default.
+class _LabButton extends StatelessWidget {
+  const _LabButton({required this.lab});
+
+  final LabSettings lab;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Open Glass Lab',
+    child: GestureDetector(
+      key: const ValueKey<String>('lab-button'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showLabSheet(context, lab),
+      child: SizedBox.square(
+        dimension: 44,
+        child: Center(
+          child: ListenableBuilder(
+            listenable: lab,
+            builder: (BuildContext context, Widget? _) => GlassBadge(
+              key: const ValueKey<String>('lab-badge'),
+              isVisible: lab.hasChanges,
+              child: const Icon(Icons.science_outlined),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _TodoList extends StatelessWidget {
-  const _TodoList({required this.controller});
+  const _TodoList({required this.controller, required this.lab});
 
   final TodoController controller;
+  final LabSettings lab;
 
   String get _emptyMessage => controller.query.trim().isNotEmpty
       ? 'No matching tasks'
@@ -381,7 +416,7 @@ class _TodoList extends StatelessWidget {
           )
         else
           for (final TodoItem item in items) ...<Widget>[
-            TodoRow(item: item, controller: controller),
+            TodoRow(item: item, controller: controller, glass: lab.glassRows),
             const SizedBox(height: 10),
           ],
       ],
