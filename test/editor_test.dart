@@ -60,6 +60,42 @@ void main() {
     expect(find.text('High priority'), findsOneWidget);
   });
 
+  testWidgets('priority blobs fuse only with the selected blob', (
+    WidgetTester tester,
+  ) async {
+    await _openEditor(tester);
+
+    final double spacing = tester
+        .widget<GlassGroup>(find.byType(GlassGroup))
+        .spacing;
+    const List<String> names = <String>['low', 'medium', 'high'];
+    Rect blob(String name) => tester.getRect(
+      find.descendant(
+        of: find.byKey(ValueKey<String>('priority-blob-$name')),
+        matching: find.byType(GlassSurface),
+      ),
+    );
+
+    for (final String selected in names) {
+      await tester.tap(find.byKey(ValueKey<String>('priority-blob-$selected')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      for (int i = 0; i < names.length - 1; i++) {
+        final double gap = blob(names[i + 1]).left - blob(names[i]).right;
+        final bool touchesSelected =
+            names[i] == selected || names[i + 1] == selected;
+        expect(
+          gap <= spacing,
+          touchesSelected,
+          reason:
+              '${names[i]} to ${names[i + 1]} with $selected selected: gap '
+              '$gap against GlassGroup spacing $spacing',
+        );
+      }
+    }
+  });
+
   testWidgets('editor pulls up to the large detent', (
     WidgetTester tester,
   ) async {

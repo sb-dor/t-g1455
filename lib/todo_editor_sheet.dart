@@ -194,7 +194,11 @@ class _TodoEditorSheetState extends State<TodoEditorSheet> {
                       const Text('Priority'),
                       const SizedBox(width: 12),
                       GlassGroup(
-                        spacing: 8,
+                        // Edge to edge: the selected 26 px blob sits 12 px from
+                        // a 14 px neighbour (6 between the cells, 6 of
+                        // centring), so 14 fuses those and keeps two small
+                        // blobs (18 apart) separate.
+                        spacing: 14,
                         finish: GlassFinish.clear,
                         labelled: false,
                         child: Row(

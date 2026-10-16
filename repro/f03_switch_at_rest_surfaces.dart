@@ -40,10 +40,8 @@ class ReproApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: ThemeData(brightness: Brightness.dark),
-    builder: (BuildContext context, Widget? child) => GlassHost(
-      backdrop: const Color(0xFF1A1D29),
-      child: child!,
-    ),
+    builder: (BuildContext context, Widget? child) =>
+        GlassHost(backdrop: const Color(0xFF1A1D29), child: child!),
     home: const Scaffold(
       backgroundColor: Color(0xFF1A1D29),
       body: SafeArea(child: ReproPage()),
