@@ -173,6 +173,44 @@ void main() {
     expect(find.text('Call the dentist'), findsNothing);
   });
 
+  testWidgets('search text survives the list being rebuilt', (
+    WidgetTester tester,
+  ) async {
+    final TodoController controller = TodoController()
+      ..addTask(title: 'Buy groceries');
+    addTearDown(controller.dispose);
+    await pumpApp(tester, controller: controller);
+
+    const ValueKey<String> searchKey = ValueKey<String>('task-search-field');
+    await tester.enterText(find.byKey(searchKey), 'grocer');
+    await tester.pump();
+    expect(controller.query, 'grocer');
+
+    // Completing and clearing the only task swaps the list for the empty
+    // state, which removes (and later rebuilds) the search field.
+    controller
+      ..setCompleted(controller.items.first.id, true)
+      ..clearCompleted();
+    await tester.pump();
+    expect(find.byKey(searchKey), findsNothing);
+
+    await addTask(tester, 'Call mom');
+
+    // The query outlives the field, so the field keeps showing it and the
+    // list says why nothing is listed.
+    final EditableText field = tester.widget(
+      find.descendant(
+        of: find.byKey(searchKey),
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(controller.query, 'grocer');
+    expect(field.controller.text, 'grocer');
+    expect(field.controller.text, controller.query);
+    expect(find.text('Call mom'), findsNothing);
+    expect(find.text('No matching tasks'), findsOneWidget);
+  });
+
   testWidgets('cancel clears the search', (WidgetTester tester) async {
     await pumpApp(tester);
     await addTask(tester, 'Buy groceries');

@@ -68,11 +68,38 @@ class _AppState extends State<App> {
   );
 }
 
-class TodoPage extends StatelessWidget {
+class TodoPage extends StatefulWidget {
   const TodoPage({required this.controller, required this.lab, super.key});
 
   final TodoController controller;
   final LabSettings lab;
+
+  @override
+  State<TodoPage> createState() => _TodoPageState();
+}
+
+class _TodoPageState extends State<TodoPage> {
+  /// The search field's text. Owned here rather than by the search bar so it
+  /// outlives the field: the list swaps for the empty state, or scrolls the
+  /// field out of the ListView's cache, and the field is rebuilt from scratch
+  /// while [TodoController.query] stays.
+  late final TextEditingController _search = TextEditingController(
+    text: widget.controller.query,
+  );
+
+  @override
+  void didUpdateWidget(TodoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _search.text = widget.controller.query;
+    }
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -93,22 +120,29 @@ class TodoPage extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ),
-                _LabButton(lab: lab),
-                _FilterPopover(controller: controller),
+                _LabButton(lab: widget.lab),
+                _FilterPopover(controller: widget.controller),
               ],
             ),
           ),
-          bottomBar: _TabBarSection(controller: controller),
-          floatingAction: QuickAddMorph(controller: controller),
+          bottomBar: _TabBarSection(controller: widget.controller),
+          floatingAction: QuickAddMorph(controller: widget.controller),
           body: GlassBackdrop.painter(
             kTodoBackdrop,
             paintBackdrop: false,
             child: ListenableBuilder(
-              listenable: Listenable.merge(<Listenable>[controller, lab]),
+              listenable: Listenable.merge(<Listenable>[
+                widget.controller,
+                widget.lab,
+              ]),
               builder: (BuildContext context, Widget? child) =>
-                  controller.items.isEmpty
+                  widget.controller.items.isEmpty
                   ? const _EmptyTodos()
-                  : _TodoList(controller: controller, lab: lab),
+                  : _TodoList(
+                      controller: widget.controller,
+                      lab: widget.lab,
+                      search: _search,
+                    ),
             ),
           ),
         ),
@@ -315,10 +349,15 @@ class _LabButton extends StatelessWidget {
 }
 
 class _TodoList extends StatelessWidget {
-  const _TodoList({required this.controller, required this.lab});
+  const _TodoList({
+    required this.controller,
+    required this.lab,
+    required this.search,
+  });
 
   final TodoController controller;
   final LabSettings lab;
+  final TextEditingController search;
 
   String get _emptyMessage => controller.query.trim().isNotEmpty
       ? 'No matching tasks'
@@ -337,6 +376,7 @@ class _TodoList extends StatelessWidget {
       children: <Widget>[
         GlassSearchBar(
           key: const ValueKey<String>('task-search-field'),
+          controller: search,
           placeholder: 'Search tasks',
           onChanged: controller.setQuery,
           onCancel: () => controller.setQuery(''),
